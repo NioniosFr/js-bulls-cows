@@ -1,15 +1,3 @@
-/**
- *Enable string formating
- *First, checks if it isn't implemented yet.
- */
-/*if (!String.prototype.format) {
-    String.prototype.format = function() {
-        var args = arguments;
-        return this.replace(/{(\d+)}/g, function(match, number) {
-            return typeof args[number] != 'undefined' ? args[number] : match;
-        });
-    };
-}*/
 
 // Class game. Controls the input/output and interface
 function Game() {
@@ -18,46 +6,19 @@ function Game() {
     // Starting view and input
     var setUp = document.getElementById('initial');
     var setUpInput = document.getElementById('guessLength');
+    var start = document.getElementById("start");
     // In game view and input
     var inGame = document.getElementById('inGame');
     var inGameFields = document.getElementById('userInput');
     var inGameInput = document.getElementById('userGuess');
+    var guess = document.getElementById("guess");
+    var reset = document.getElementById("reset");
     // result, errors view and extra output
     var results = document.getElementById('log');
     var errors = document.getElementById('error');
     var hidden = document.getElementById('pcGuess');
     var success = document.getElementById('success');
-
-    // Add the listeners
-    var start = document.getElementById("start");
-    start.addEventListener('click', function() {
-        if (isNaN(setUpInput.value) || setUpInput.value > maxLength) {
-            showError("Add a number please, of maximum length " + maxLength + ".");
-            return;
-        } else {
-            processor = new Processor(setUpInput.value);
-            hideError();
-            hide(setUp);
-            show(inGame);
-            show(inGameFields);
-            hidden.value = processor.getPcGuess();
-        }
-    });
-    var guess = document.getElementById("guess");
-    guess.addEventListener('click', function() {
-        var l = inGameInput.value;
-        if (isNaN(l) || l.length != processor.getGuessLength()) {
-            showError("Add a number please, of maximum length " + processor.getGuessLength() + ".");
-            return;
-        } else {
-            processor.setInput(inGameInput.value);
-            hideError();
-        }
-        if (processor.getResult())
-            won();
-        printResult();
-    });
-    var reset = document.getElementById("reset");
+    var reverse = document.getElementById('reverse');
     reset.addEventListener('click', function() {
         processor = null;
         show(setUp);
@@ -73,11 +34,11 @@ function Game() {
     //document.getElementById("reset").addEventListener("onclick", reset);
     var won = function() {
         //hide(inGameFields);
-        success.innerHTML = "<p><strong>Congratulations!</strong> You won in "+processor.getLastResult().turn + " turns.</p>";
+        success.innerHTML = "<p><strong>Congratulations!</strong> You won in " + processor.getLastResult().turn + " turns.</p>";
         show(success);
     };
-    var printResult = function() {
-        results.innerHTML = processor.getRounds();
+    var printResults = function(inReverse) {
+        results.innerHTML = processor.getRounds(reverse.checked);
         show(results);
     };
 
@@ -98,23 +59,64 @@ function Game() {
     var hide = function(e) {
         e.style.display = 'none';
     };
+    var begin = function() {
+        var input = setUpInput.value.trim();
+        if (isNaN(input) || input > maxLength) {
+            showError("Add a number please, of maximum length " + maxLength + ".");
+            return;
+        } else {
+            processor = new Processor(input);
+            hideError();
+            hide(setUp);
+            show(inGame);
+            show(inGameFields);
+            hidden.value = processor.getPcGuess();
+        }
+    };
+    var setInput = function() {
+        var l = inGameInput.value.trim();
+        if (isNaN(l) || l.length != processor.getGuessLength()) {
+            showError("Add a number please, of maximum length " + processor.getGuessLength() + ".");
+            return;
+        } else {
+            processor.setInput(inGameInput.value);
+            hideError();
+        }
+        if (processor.getResult())
+            won();
+        printResults();
+    };
+    // Add the listeners
+    start.addEventListener('click', begin);
+    document.getElementById("guessLength").addEventListener('keypress', function(event) {
+        if (event.keyCode == 13) {
+            event.preventDefault();
+            begin();
+        }
+    });
+    guess.addEventListener('click', setInput);
+    document.getElementById('userGuess').addEventListener('keypress', function(event) {
+        if (event.keyCode == 13) {
+            event.preventDefault();
+            setInput();
+        }
+    });
+    reverse.addEventListener('click', printResults);
     hide(inGame);
-};
+}
 
 // Cow Bulls internals
 function Processor(length) {
     // Required variables
-    var pcGuess = new Array();
-    var userGuess = new Array();
+    var pcGuess = [];
+    var userGuess = [];
     var userValue;
-    var guessLength = parseInt(length);
-    var round = new Array();
+    var guessLength = parseInt(length, 10);
+    var round = [];
     // Result variables
     var cows = 0;
     var bulls = 0;
-    var bullPosition = new Array();
-    var round = new Array();
-
+    var bullPosition = [];
     var won = false;
 
     for (var i = 0; i < guessLength; i++) {
@@ -126,7 +128,7 @@ function Processor(length) {
                 exists = pcGuess[e] == guess ? true : false;
                 if (exists) break;
             }
-        } while (exists)
+        } while (exists);
         pcGuess[i] = guess;
     }
     this.getPcGuess = function() {
@@ -139,9 +141,13 @@ function Processor(length) {
 
     this.setInput = function(userInput) {
         for (var i = 0; i < guessLength; i++)
-            userGuess[i] = parseInt(userInput[i]);
-        userValue = parseInt(userInput);
+            userGuess[i] = parseInt(userInput[i], 10);
+        userValue = parseInt(userInput, 10);
     };
+    /** 
+     * Finds the result of user's input.
+     * @returns {bool} true if user won, false otherwise
+     */
     this.getResult = function() {
         //Store the round
         var index = round.length;
@@ -149,31 +155,45 @@ function Processor(length) {
         round[index].bulls = findBulls();
         round[index].cows = findCows();
         round[index].userInput = userValue;
-        round[index].turn = index+1;
+        round[index].turn = index + 1;
         // Return the list of rounds
         return round[index].bulls === guessLength;
     };
     // Returns an order lists with all the user turns
-    this.getRounds = function() {
+    this.getRounds = function(reverse) {
         var result = "<table id='entries' class='table table-condensed'><tbody><tr><th>Turn</th><th>Input</th><th>Cows</th><th>Bulls</th></tr>";
-        //debugger;
-        for (var i = 0, max = round.length; i < max; i++) {
-            result += round[i].bulls === guessLength ? '<tr class="success">' : '<tr>';
-            // If the user typed zero as a first number, pad it to the string otherwise it doesn't show.
-            var input = String(round[i].userInput).length === guessLength ? round[i].userInput : "0" + round[i].userInput;
-            result += to_td(round[i].turn);
-            result += to_td(input);
-            result += to_td(round[i].cows);
-            result += to_td(round[i].bulls);
-            result += "</tr>";
+        var input;
+        // Show the table in the oposite direction.
+        if (reverse) {
+            for (var i = round.length - 1, min = 0; i >= min; i--) {
+                result += round[i].bulls === guessLength ? '<tr class="success">' : '<tr>';
+                // If the user typed zero as a first number, pad it to the string otherwise it doesn't show.
+                input = String(round[i].userInput).length === guessLength ? round[i].userInput : "0" + round[i].userInput;
+                result += to_td(round[i].turn);
+                result += to_td(input);
+                result += to_td(round[i].cows);
+                result += to_td(round[i].bulls);
+                result += "</tr>";
+            }
+        } else {
+            for (var j = 0, max = round.length; j < max; j++) {
+                result += round[j].bulls === guessLength ? '<tr class="success">' : '<tr>';
+                // If the user typed zero as a first number, pad it to the string otherwise it doesn't show.
+                input = String(round[j].userInput).length === guessLength ? round[j].userInput : "0" + round[j].userInput;
+                result += to_td(round[j].turn);
+                result += to_td(input);
+                result += to_td(round[j].cows);
+                result += to_td(round[j].bulls);
+                result += "</tr>";
+            }
         }
-        result += "</tbody></table>"
+        result += "</tbody></table>";
         return result;
     };
 
     var to_td = function(data, attr) {
-        data = data || '';
-        return "<td class='"+ String(attr) +"'>" + String(data) + "</td>";
+        data = data || '-';
+        return "<td class='" + String(attr) + "'>" + String(data) + "</td>";
     };
 
     var findBulls = function() {
@@ -185,7 +205,7 @@ function Processor(length) {
     };
     this.setPcGuess = function(number) {
         for (var i = 0; i < guessLength; i++)
-            pcGuess[i] = parseInt(number[i]);
+            pcGuess[i] = parseInt(number[i], 10);
     };
     this.getLastResult = function() {
         return round[round.length - 1];
@@ -205,9 +225,17 @@ function Processor(length) {
     };
 }
 
+/**
+ * Broot forces the processor class and retrieves the number.
+ */
 function BrootForcer(processor) {
+    /** The processor class to broot force
+     * Instead of stealing the table value, get the whole class
+     *
+     */
     var proc = processor;
     // Timers
+    var date = new Date();
     var startTime;
     var endTime;
     var timeout;
@@ -218,12 +246,17 @@ function BrootForcer(processor) {
         bulls: [],
         cows: []
     };
-    var getRound = function() {};
-    var setRound = function() {};
-    var tryOnce = function() {};
+    var getRound = function() {
+        proc.getLastResult();
+    };
+    var setRound = function(number) {
+        proc.setInput(number);
+    };
+    var tryOnce = function(number) {
+        proc.getResult();
+    };
     this.findNoBull = function() {
         var found = false;
-        debugger;
         do {
             var noBulls = Math.floor(Math.random() * 9 + 0);
             proc.setInput(String(noBulls));
@@ -231,7 +264,7 @@ function BrootForcer(processor) {
             if (proc.getLastResult().bulls === 0) {
                 found = true;
             }
-        } while (!found)
+        } while (!found);
     };
     this.
     break = function() {};
