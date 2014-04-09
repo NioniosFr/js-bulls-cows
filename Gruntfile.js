@@ -2,11 +2,11 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         // MetaData
-        banner: '/*! <%= pkg.title || pkg.name %> - v<%= pkg.version %> - ' +
+        banner: '/*!\n* <%= pkg.title || pkg.name %> - v<%= pkg.version %> - ' +
             '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
             '<%= pkg.homepage ? "* " + pkg.homepage + "\\n" : "" %>' +
-            '* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>;' +
-            ' Licensed <%= pkg.license %> */\n',
+            '* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>' +
+            ' \n* Licensed under: <%= pkg.license %> \n*/\n',
         // Task configuration.
         clean: {
             src: ['dist']
@@ -14,11 +14,17 @@ module.exports = function(grunt) {
         concat: {
             options: {
                 banner: '<%= banner %>',
-                stripBanners: true
+                stripBanners: true,
+                seperator: ';',
             },
-            dist: {
+            main: {
                 src: ['src/<%= pkg.name %>.js'],
-                dest: 'dist/fr-<%= pkg.name %>.js'
+                dest: 'dist/<%= pkg.name %>.js',
+            },
+            multiple_files: {
+                files: {
+                    'dist/full-<%= pkg.name %>.js': ['src/<%= pkg.name %>.js', ], // Define all files here.
+                },
             },
         },
         jshint: {
@@ -28,18 +34,27 @@ module.exports = function(grunt) {
             options: {
                 banner: '<%= banner %>'
             },
-            dist: {
-                src: '<%= concat.dist.dest %>',
-                dest: 'dist/fr-<%= pkg.name %>.min.js'
+            main: {
+                src: '<%= concat.main.dest %>',
+                dest: 'dist/<%= pkg.name %>.min.js',
+            },
+            multiple_files: {
+                src: 'dist/full-<%= pkg.name %>.js',
+                dest: 'dist/full-<%= pkg.name %>.min.js',
             },
         },
         watch: {
             src: {
                 files: '<%= jshint.src %>',
-                tasks: ['jshint:src']
-            }
+                tasks: ['jshint:src'] // In the future testing tasks should also be invoked.
+            },
         },
-
+        copy: {
+            main: {
+                src: 'node_modules/twitter-bootstrap/dist/css/bootstrap.min.css',
+                dest: 'dist/bootstrap.min.css',
+            },
+        },
     });
     // These plugins provide necessary tasks.
     grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -47,6 +62,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-copy');
+
     // Default task.
-    grunt.registerTask('default', ['jshint', 'clean', 'concat', 'uglify']);
+    grunt.registerTask('default', ['jshint', 'clean', 'concat', 'uglify', 'copy:main']);
 };
