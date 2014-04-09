@@ -1,6 +1,9 @@
-/*! Bulls-Cows Mind game - v0.0.1 - 2013-12-13
+/*!
+* Bulls-Cows Mind game - v0.0.1 - 2014-04-09
 * https://github.com/NioniosFr/js-bulls-cows
-* Copyright (c) 2013 [NioniosFr] Dionysios Fryganas; Licensed MIT */
+* Copyright (c) 2014 [NioniosFr] Dionysios Fryganas 
+* Licensed under: MIT 
+*/
 
 // Class game. Controls the input/output and interface
 function Game() {
