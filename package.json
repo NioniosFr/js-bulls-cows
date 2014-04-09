@@ -10,22 +10,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/NioniosFr/js-bulls-cows/issues"
+    "url": "https://github.com/NioniosFr/js-bulls-cows/.git"
   },
-  "bugs": "https://github.com/NioniosFr/js-bulls-cows.git",
+  "bugs": "https://github.com/NioniosFr/js-bulls-cows/issues",
   "author": {
     "name": "[NioniosFr] Dionysios Fryganas",
     "url": ""
   },
   "license": "MIT",
   "dependencies": {
-    "grunt": "~0.4.2"
-  }, 
+    "grunt": "~0.4.2",
+    "twitter-bootstrap": "https://github.com/twbs/bootstrap/tarball/master"
+  },
   "devDependencies": {
     "grunt-contrib-uglify": "~0.2.7",
     "grunt-contrib-jshint": "~0.7.2",
     "grunt-contrib-watch": "~0.5.3",
     "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-concat": "~0.3.0"
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-copy": "~0.5.0"
   }
 }
